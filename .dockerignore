@@ -1,0 +1,13 @@
+.git
+.idea
+.vscode
+.gradle
+build
+out
+node_modules
+.terraform
+infra/.terraform
+infra/.terraform.lock.hcl
+infra/plan.txt
+*.iml
+*.log
