@@ -2,6 +2,7 @@ package local.example.restaurant_reservation.repository;
 
 import java.sql.Types;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -80,16 +81,21 @@ public class ReservationRepository {
     }
 
     public List<Reservation> findByRestaurantAndDate(Long restaurantId, LocalDate date) {
-        MapSqlParameterSource params =
-                new MapSqlParameterSource().addValue("restaurantId", restaurantId).addValue("date",
-                        date);
-        return namedParameterJdbcTemplate.query("""
-                SELECT *
-                FROM reservation
-                WHERE restaurant_id = :restaurantId
-                  AND CAST(starts_at AS DATE) = :date
-                ORDER BY starts_at, id
-                """, params, new BeanPropertyRowMapper<>(Reservation.class));
+      // Compare using UTC day boundaries to avoid timezone-sensitive casts
+      var startOfDayUtc = date.atStartOfDay().atOffset(ZoneOffset.UTC);
+      var endOfDayUtc = startOfDayUtc.plusDays(1);
+      MapSqlParameterSource params =
+          new MapSqlParameterSource().addValue("restaurantId", restaurantId)
+              .addValue("startAt", startOfDayUtc, Types.TIMESTAMP_WITH_TIMEZONE)
+              .addValue("endAt", endOfDayUtc, Types.TIMESTAMP_WITH_TIMEZONE);
+      return namedParameterJdbcTemplate.query("""
+          SELECT *
+          FROM reservation
+          WHERE restaurant_id = :restaurantId
+            AND starts_at >= :startAt
+            AND starts_at < :endAt
+          ORDER BY starts_at, id
+          """, params, new BeanPropertyRowMapper<>(Reservation.class));
     }
 
     public List<Reservation> findByRestaurant(Long restaurantId) {
