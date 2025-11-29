@@ -29,14 +29,15 @@ public class RestaurantRepository {
     }
 
     public Restaurant add(Restaurant restaurant) {
-        Restaurant nonNullRestaurant = Objects.requireNonNull(restaurant, "restaurant must not be null");
-        SqlParameterSource parameterSource = new BeanPropertySqlParameterSource(nonNullRestaurant);
+        Restaurant nonNullRestaurant =
+                Objects.requireNonNull(restaurant, "restaurant must not be null");
+        SqlParameterSource params = new BeanPropertySqlParameterSource(nonNullRestaurant);
         KeyHolder keyHolder = new GeneratedKeyHolder();
         int rowsUpdated = namedParameterJdbcTemplate.update("""
                 INSERT INTO restaurant
                 (name, address, phone, open_time, close_time, total_tables)
                 VALUES (:name, :address, :phone, :openTime, :closeTime, :totalTables)
-                """, parameterSource, keyHolder, new String[]{"id"});
+                """, params, keyHolder, new String[] {"id"});
         Number key = keyHolder.getKey();
         if (rowsUpdated == 0 || key == null) {
             throw new IllegalStateException("Failed to insert restaurant");
@@ -45,19 +46,20 @@ public class RestaurantRepository {
     }
 
     public Restaurant update(Restaurant restaurant) {
-        Restaurant nonNullRestaurant = Objects.requireNonNull(restaurant, "restaurant must not be null");
-        SqlParameterSource parameterSource = new BeanPropertySqlParameterSource(nonNullRestaurant);
+        Restaurant nonNullRestaurant =
+                Objects.requireNonNull(restaurant, "restaurant must not be null");
+        SqlParameterSource params = new BeanPropertySqlParameterSource(nonNullRestaurant);
         namedParameterJdbcTemplate.update("""
                 UPDATE restaurant
                 SET name=:name, address=:address, phone=:phone,
                   open_time=:openTime, close_time=:closeTime, total_tables=:totalTables
                 WHERE id=:id
-                """, parameterSource);
+                """, params);
         return findById(restaurant.getId());
     }
 
     public List<Restaurant> findAll(int page, int size) {
-        MapSqlParameterSource params = new MapSqlParameterSource().addValue("limit", size)
+        SqlParameterSource params = new MapSqlParameterSource().addValue("limit", size)
                 .addValue("offset", (long) page * size);
         return namedParameterJdbcTemplate.query("""
                 SELECT *

@@ -25,12 +25,12 @@ public class CustomerRepository {
 
     public Customer add(Customer customer) {
         Customer nonNullCustomer = Objects.requireNonNull(customer, "customer must not be null");
-        SqlParameterSource parameters = new BeanPropertySqlParameterSource(nonNullCustomer);
+        SqlParameterSource params = new BeanPropertySqlParameterSource(nonNullCustomer);
         KeyHolder keyHolder = new GeneratedKeyHolder();
         namedParameterJdbcTemplate.update("""
                 INSERT INTO customer (name, phone, email)
                 VALUES (:name, :phone, :email)
-                """, parameters, keyHolder, new String[]{"id"});
+                """, params, keyHolder, new String[] {"id"});
         Number key = keyHolder.getKey();
         if (key == null) {
             throw new IllegalStateException("Failed to insert customer, no key was generated");
