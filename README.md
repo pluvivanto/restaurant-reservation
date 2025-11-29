@@ -17,7 +17,6 @@ Minimal backend for restaurants reservation management system
 - `GET /restaurants/{restaurantId}/reservations?date=YYYY-MM-DD` – list reservations
 - `POST /reservations` – create reservation
 - `GET /reservations/{reservationId}` – fetch reservation
-- `POST /reservations/{reservationId}/cancel` – cancel
 - `POST /reservations/{reservationId}/status` – update status
 - `GET /actuator/health` – health check
 

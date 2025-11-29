@@ -11,7 +11,6 @@ import local.example.restaurant_reservation.dto.ReservationResponseDto;
 import local.example.restaurant_reservation.dto.ReservationStatusUpdateRequestDto;
 import local.example.restaurant_reservation.model.Customer;
 import local.example.restaurant_reservation.model.Reservation;
-import local.example.restaurant_reservation.model.ReservationStatusEnum;
 import local.example.restaurant_reservation.model.Restaurant;
 import local.example.restaurant_reservation.repository.CustomerRepository;
 import local.example.restaurant_reservation.repository.ReservationRepository;
@@ -25,7 +24,7 @@ public class ReservationService {
     private final RestaurantRepository restaurantRepository;
 
     public ReservationService(ReservationRepository reservationRepository,
-                              CustomerRepository customerRepository, RestaurantRepository restaurantRepository) {
+            CustomerRepository customerRepository, RestaurantRepository restaurantRepository) {
         this.reservationRepository = reservationRepository;
         this.customerRepository = customerRepository;
         this.restaurantRepository = restaurantRepository;
@@ -45,15 +44,6 @@ public class ReservationService {
 
     public ReservationResponseDto getReservation(Long reservationId) {
         return ReservationResponseDto.fromEntity(findReservation(reservationId));
-    }
-
-    public ReservationResponseDto cancelReservation(Long reservationId) {
-        Reservation reservation = findReservation(reservationId);
-        Reservation cancelled = reservation.toBuilder()
-                .status(ReservationStatusEnum.CANCELLED)
-                .build();
-        reservationRepository.update(cancelled);
-        return ReservationResponseDto.fromEntity(cancelled);
     }
 
     public ReservationResponseDto updateStatus(Long reservationId,

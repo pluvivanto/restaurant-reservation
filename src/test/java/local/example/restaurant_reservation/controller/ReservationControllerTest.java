@@ -100,22 +100,6 @@ class ReservationControllerTest {
     }
 
     @Test
-    void cancelReservation_ReturnsCancelled_WhenCalled() throws Exception {
-        // given
-        ReservationResponseDto cancelled = new ReservationResponseDto();
-        cancelled.setId(reservation.getId());
-        cancelled.setRestaurantId(reservation.getRestaurantId());
-        cancelled.setStatus(ReservationStatusEnum.CANCELLED);
-        when(reservationService.cancelReservation(reservation.getId())).thenReturn(cancelled);
-
-        // when
-        mockMvc.perform(post("/reservations/{id}/cancel", reservation.getId()))
-                // then
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.status").value(ReservationStatusEnum.CANCELLED.name()));
-    }
-
-    @Test
     void updateStatus_ReturnsUpdatedDto_WhenStatusValid() throws Exception {
         // given
         ReservationStatusUpdateRequestDto statusRequest = new ReservationStatusUpdateRequestDto();

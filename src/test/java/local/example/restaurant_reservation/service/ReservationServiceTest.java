@@ -97,21 +97,6 @@ class ReservationServiceTest {
     }
 
     @Test
-    void cancelReservation_SetsStatusCancelled_WhenCalled() {
-        // given
-        when(reservationRepository.findById(reservation.getId())).thenReturn(reservation);
-        Reservation cancelled = reservation.toBuilder().status(ReservationStatusEnum.CANCELLED).build();
-        when(reservationRepository.update(any(Reservation.class))).thenReturn(cancelled);
-
-        // when
-        ReservationResponseDto response = reservationService.cancelReservation(reservation.getId());
-
-        // then
-        assertThat(response.getStatus()).isEqualTo(ReservationStatusEnum.CANCELLED);
-        verify(reservationRepository).update(any(Reservation.class));
-    }
-
-    @Test
     void updateStatus_SavesStatus_WhenRequestValid() {
         // given
         when(reservationRepository.findById(reservation.getId())).thenReturn(reservation);

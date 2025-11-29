@@ -38,11 +38,6 @@ public class ReservationController {
         return reservationService.getReservation(reservationId);
     }
 
-    @PostMapping("/reservations/{reservationId}/cancel")
-    public ReservationResponseDto cancelReservation(@PathVariable Long reservationId) {
-        return reservationService.cancelReservation(reservationId);
-    }
-
     @PostMapping("/reservations/{reservationId}/status")
     public ReservationResponseDto updateReservationStatus(@PathVariable Long reservationId,
                                                           @Valid @RequestBody ReservationStatusUpdateRequestDto statusRequestDto) {
