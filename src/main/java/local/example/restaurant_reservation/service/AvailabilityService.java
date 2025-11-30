@@ -9,9 +9,7 @@ import local.example.restaurant_reservation.model.ReservationStatusEnum;
 import local.example.restaurant_reservation.model.Restaurant;
 import local.example.restaurant_reservation.repository.ReservationRepository;
 import local.example.restaurant_reservation.repository.RestaurantRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class AvailabilityService {
@@ -26,7 +24,7 @@ public class AvailabilityService {
     }
 
     public AvailabilityResponseDto getAvailability(Long restaurantId, LocalDate date) {
-        Restaurant restaurant = findRestaurant(restaurantId);
+        Restaurant restaurant = restaurantRepository.findById(restaurantId);
         List<Reservation> reservations =
                 reservationRepository.findByRestaurantAndDate(restaurantId, date);
 
@@ -40,14 +38,5 @@ public class AvailabilityService {
         dto.setDate(date);
         dto.setAvailableTables(availableTables);
         return dto;
-    }
-
-    private Restaurant findRestaurant(Long restaurantId) {
-        try {
-            return restaurantRepository.findById(restaurantId);
-        } catch (Exception ex) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
-                    "Restaurant with id %d not found".formatted(restaurantId), ex);
-        }
     }
 }

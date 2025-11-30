@@ -1,8 +1,6 @@
 package local.example.restaurant_reservation.repository;
 
-import java.util.Objects;
-import java.util.Optional;
-
+import local.example.restaurant_reservation.model.Customer;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
@@ -12,7 +10,8 @@ import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-import local.example.restaurant_reservation.model.Customer;
+
+import java.util.Objects;
 
 @Repository
 public class CustomerRepository {
@@ -35,13 +34,10 @@ public class CustomerRepository {
         if (key == null) {
             throw new IllegalStateException("Failed to insert customer, no key was generated");
         }
-        return findById(key.longValue()).orElseThrow();
+        return findById(key.longValue());
     }
 
-    public Optional<Customer> findByEmail(String email) {
-        if (email == null) {
-            return Optional.empty();
-        }
+    public Customer findByEmail(String email) {
         try {
             SqlParameterSource params = new MapSqlParameterSource("email", email);
             Customer customer = namedParameterJdbcTemplate.queryForObject("""
@@ -49,13 +45,14 @@ public class CustomerRepository {
                     FROM customer
                     WHERE lower(email) = lower(:email)
                     """, params, new BeanPropertyRowMapper<>(Customer.class));
-            return Optional.ofNullable(customer);
+            return customer;
         } catch (EmptyResultDataAccessException ex) {
-            return Optional.empty();
+            throw new IllegalArgumentException("Customer with email %s not found".formatted(email),
+                    ex);
         }
     }
 
-    public Optional<Customer> findById(Long id) {
+    public Customer findById(Long id) {
         try {
             SqlParameterSource params = new MapSqlParameterSource("id", id);
             Customer customer = namedParameterJdbcTemplate.queryForObject("""
@@ -63,9 +60,9 @@ public class CustomerRepository {
                     FROM customer
                     WHERE id = :id
                     """, params, new BeanPropertyRowMapper<>(Customer.class));
-            return Optional.ofNullable(customer);
+            return customer;
         } catch (EmptyResultDataAccessException ex) {
-            return Optional.empty();
+            throw new IllegalArgumentException("Customer %d not found".formatted(id), ex);
         }
     }
 }

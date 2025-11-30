@@ -18,7 +18,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.web.server.ResponseStatusException;
 import local.example.restaurant_reservation.dto.RestaurantRequestDto;
 import local.example.restaurant_reservation.dto.RestaurantResponseDto;
 import local.example.restaurant_reservation.model.Restaurant;
@@ -69,8 +68,7 @@ class RestaurantServiceTest {
 
         // when + then
         assertThatThrownBy(() -> restaurantService.getRestaurant(42L))
-                .isInstanceOf(ResponseStatusException.class)
-                .hasMessageContaining("Restaurant with id 42 not found");
+                .isInstanceOf(EmptyResultDataAccessException.class);
     }
 
     @Test

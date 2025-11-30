@@ -6,10 +6,7 @@ import local.example.restaurant_reservation.dto.RestaurantRequestDto;
 import local.example.restaurant_reservation.dto.RestaurantResponseDto;
 import local.example.restaurant_reservation.model.Restaurant;
 import local.example.restaurant_reservation.repository.RestaurantRepository;
-import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class RestaurantService {
@@ -26,7 +23,7 @@ public class RestaurantService {
     }
 
     public RestaurantResponseDto getRestaurant(Long restaurantId) {
-        Restaurant restaurant = findExisting(restaurantId);
+        Restaurant restaurant = restaurantRepository.findById(restaurantId);
         return RestaurantResponseDto.fromEntity(restaurant);
     }
 
@@ -38,7 +35,7 @@ public class RestaurantService {
 
     public RestaurantResponseDto updateRestaurant(Long restaurantId,
                                                   RestaurantRequestDto requestDto) {
-        Restaurant existing = findExisting(restaurantId);
+        Restaurant existing = restaurantRepository.findById(restaurantId);
         existing.setName(requestDto.getName());
         existing.setAddress(requestDto.getAddress());
         existing.setPhone(requestDto.getPhone());
@@ -47,18 +44,5 @@ public class RestaurantService {
         existing.setTotalTables(requestDto.getTotalTables());
         Restaurant updated = restaurantRepository.update(existing);
         return RestaurantResponseDto.fromEntity(updated);
-    }
-
-    private Restaurant findExisting(Long restaurantId) {
-        try {
-            return restaurantRepository.findById(restaurantId);
-        } catch (EmptyResultDataAccessException ex) {
-            throw notFound(restaurantId);
-        }
-    }
-
-    private ResponseStatusException notFound(Long id) {
-        return new ResponseStatusException(HttpStatus.NOT_FOUND,
-                "Restaurant with id %d not found".formatted(id));
     }
 }

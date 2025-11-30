@@ -1,25 +1,5 @@
 package local.example.restaurant_reservation.service;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import local.example.restaurant_reservation.dto.ReservationRequestDto;
 import local.example.restaurant_reservation.dto.ReservationResponseDto;
 import local.example.restaurant_reservation.dto.ReservationStatusUpdateRequestDto;
@@ -31,6 +11,25 @@ import local.example.restaurant_reservation.repository.CustomerRepository;
 import local.example.restaurant_reservation.repository.ReservationRepository;
 import local.example.restaurant_reservation.repository.RestaurantRepository;
 import net.datafaker.Faker;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Random;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ReservationServiceTest {
@@ -81,7 +80,7 @@ class ReservationServiceTest {
 
         when(restaurantRepository.findById(restaurant.getId())).thenReturn(restaurant);
         when(customerRepository.findByEmail(requestDto.getCustomerEmail()))
-                .thenReturn(Optional.empty());
+                .thenThrow(new IllegalArgumentException("missing"));
         when(customerRepository.add(any(Customer.class))).thenReturn(customer);
         when(reservationRepository.add(any(Reservation.class))).thenReturn(reservation);
 

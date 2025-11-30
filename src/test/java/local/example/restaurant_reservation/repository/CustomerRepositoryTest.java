@@ -1,16 +1,16 @@
 package local.example.restaurant_reservation.repository;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
-import java.util.Optional;
-import java.util.Random;
+import local.example.restaurant_reservation.model.Customer;
+import net.datafaker.Faker;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
-import local.example.restaurant_reservation.model.Customer;
-import net.datafaker.Faker;
+
+import java.util.Random;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Transactional
@@ -34,10 +34,9 @@ class CustomerRepositoryTest {
         // then
         assertThat(saved.getId()).isNotNull();
         assertThat(saved.getCreatedAt()).isNotNull();
-        Optional<Customer> reloaded = repository.findById(saved.getId());
-        assertThat(reloaded).isPresent();
-        assertThat(reloaded.get().getEmail()).isEqualTo(saved.getEmail());
-        assertThat(reloaded.get().getName()).isEqualTo(saved.getName());
+        Customer reloaded = repository.findById(saved.getId());
+        assertThat(reloaded.getEmail()).isEqualTo(saved.getEmail());
+        assertThat(reloaded.getName()).isEqualTo(saved.getName());
     }
 
     @Test
@@ -48,10 +47,9 @@ class CustomerRepositoryTest {
                 .phone(FAKER.phoneNumber().cellPhone()).email(mixedCaseEmail.toLowerCase()).build());
 
         // when
-        Optional<Customer> found = repository.findByEmail(mixedCaseEmail.toUpperCase());
+        Customer found = repository.findByEmail(mixedCaseEmail.toUpperCase());
 
         // then
-        assertThat(found).isPresent();
-        assertThat(found.get().getEmail()).isEqualTo(mixedCaseEmail.toLowerCase());
+        assertThat(found.getEmail()).isEqualTo(mixedCaseEmail.toLowerCase());
     }
 }
