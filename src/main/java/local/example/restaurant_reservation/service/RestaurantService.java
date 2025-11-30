@@ -7,6 +7,7 @@ import local.example.restaurant_reservation.dto.RestaurantResponseDto;
 import local.example.restaurant_reservation.model.Restaurant;
 import local.example.restaurant_reservation.repository.RestaurantRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class RestaurantService {
@@ -33,9 +34,10 @@ public class RestaurantService {
         return RestaurantResponseDto.fromEntity(created);
     }
 
+    @Transactional
     public RestaurantResponseDto updateRestaurant(Long restaurantId,
                                                   RestaurantRequestDto requestDto) {
-        Restaurant existing = restaurantRepository.findById(restaurantId);
+        Restaurant existing = restaurantRepository.findByIdForUpdate(restaurantId);
         existing.setName(requestDto.getName());
         existing.setAddress(requestDto.getAddress());
         existing.setPhone(requestDto.getPhone());

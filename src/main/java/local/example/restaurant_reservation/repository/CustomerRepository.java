@@ -2,6 +2,7 @@ package local.example.restaurant_reservation.repository;
 
 import local.example.restaurant_reservation.model.Customer;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -26,10 +27,16 @@ public class CustomerRepository {
         Customer nonNullCustomer = Objects.requireNonNull(customer, "customer must not be null");
         SqlParameterSource params = new BeanPropertySqlParameterSource(nonNullCustomer);
         KeyHolder keyHolder = new GeneratedKeyHolder();
-        namedParameterJdbcTemplate.update("""
-                INSERT INTO customer (name, phone, email)
-                VALUES (:name, :phone, :email)
-                """, params, keyHolder, new String[] {"id"});
+        try {
+            namedParameterJdbcTemplate.update("""
+                    INSERT INTO customer (name, phone, email)
+                    VALUES (:name, :phone, :email)
+                    """, params, keyHolder, new String[] {"id"});
+        } catch (DuplicateKeyException ex) {
+            throw new DuplicateKeyException(
+                    "Customer with email %s already exists".formatted(nonNullCustomer.getEmail()),
+                    ex);
+        }
         Number key = keyHolder.getKey();
         if (key == null) {
             throw new IllegalStateException("Failed to insert customer, no key was generated");
@@ -40,12 +47,11 @@ public class CustomerRepository {
     public Customer findByEmail(String email) {
         try {
             SqlParameterSource params = new MapSqlParameterSource("email", email);
-            Customer customer = namedParameterJdbcTemplate.queryForObject("""
+            return namedParameterJdbcTemplate.queryForObject("""
                     SELECT *
                     FROM customer
                     WHERE lower(email) = lower(:email)
                     """, params, new BeanPropertyRowMapper<>(Customer.class));
-            return customer;
         } catch (EmptyResultDataAccessException ex) {
             throw new IllegalArgumentException("Customer with email %s not found".formatted(email),
                     ex);
@@ -55,12 +61,11 @@ public class CustomerRepository {
     public Customer findById(Long id) {
         try {
             SqlParameterSource params = new MapSqlParameterSource("id", id);
-            Customer customer = namedParameterJdbcTemplate.queryForObject("""
+            return namedParameterJdbcTemplate.queryForObject("""
                     SELECT *
                     FROM customer
                     WHERE id = :id
                     """, params, new BeanPropertyRowMapper<>(Customer.class));
-            return customer;
         } catch (EmptyResultDataAccessException ex) {
             throw new IllegalArgumentException("Customer %d not found".formatted(id), ex);
         }

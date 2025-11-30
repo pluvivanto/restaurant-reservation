@@ -98,7 +98,7 @@ class RestaurantServiceTest {
     void updateRestaurant_ReturnsUpdated_WhenFound() {
         // given
         Restaurant updated = existing.toBuilder().name("Updated Name").totalTables(12).build();
-        when(restaurantRepository.findById(existing.getId())).thenReturn(existing);
+        when(restaurantRepository.findByIdForUpdate(existing.getId())).thenReturn(existing);
         when(restaurantRepository.update(existing)).thenReturn(updated);
 
         RestaurantRequestDto request = new RestaurantRequestDto();

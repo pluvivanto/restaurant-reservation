@@ -9,6 +9,7 @@ import local.example.restaurant_reservation.repository.CustomerRepository;
 import local.example.restaurant_reservation.repository.ReservationRepository;
 import local.example.restaurant_reservation.repository.RestaurantRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -27,14 +28,21 @@ public class ReservationService {
         this.restaurantRepository = restaurantRepository;
     }
 
+    @Transactional
     public ReservationResponseDto createReservation(ReservationRequestDto requestDto) {
-        // Validate restaurant exists before creating a reservation
-        restaurantRepository.findById(requestDto.getRestaurantId());
+        var restaurant = restaurantRepository.findByIdForUpdate(requestDto.getRestaurantId());
         Customer customer;
         try {
             customer = customerRepository.findByEmail(requestDto.getCustomerEmail());
         } catch (IllegalArgumentException ex) {
             customer = customerRepository.add(requestDto.toCustomer());
+        }
+
+        int reservedTables =
+                reservationRepository.sumReservedTablesForSlot(restaurant.getId(),
+                        requestDto.getStartsAt());
+        if (reservedTables + requestDto.getTableCount() > restaurant.getTotalTables()) {
+            throw new IllegalStateException("Not enough tables available for the requested slot");
         }
 
         Reservation reservation = requestDto.toReservation(customer.getId());
@@ -47,9 +55,10 @@ public class ReservationService {
         return ReservationResponseDto.fromEntity(reservationRepository.findById(reservationId));
     }
 
+    @Transactional
     public ReservationResponseDto updateStatus(Long reservationId,
                                                ReservationStatusUpdateRequestDto statusRequest) {
-        Reservation reservation = reservationRepository.findById(reservationId);
+        Reservation reservation = reservationRepository.findByIdForUpdate(reservationId);
         Reservation updated = reservation.toBuilder()
                 .status(statusRequest.getStatus())
                 .build();

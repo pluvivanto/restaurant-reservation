@@ -78,10 +78,12 @@ class ReservationServiceTest {
         requestDto.setTableCount(2);
         requestDto.setStartsAt(reservation.getStartsAt());
 
-        when(restaurantRepository.findById(restaurant.getId())).thenReturn(restaurant);
+        when(restaurantRepository.findByIdForUpdate(restaurant.getId())).thenReturn(restaurant);
         when(customerRepository.findByEmail(requestDto.getCustomerEmail()))
                 .thenThrow(new IllegalArgumentException("missing"));
         when(customerRepository.add(any(Customer.class))).thenReturn(customer);
+        when(reservationRepository.sumReservedTablesForSlot(restaurant.getId(), reservation.getStartsAt()))
+                .thenReturn(0);
         when(reservationRepository.add(any(Reservation.class))).thenReturn(reservation);
 
         // when
@@ -98,11 +100,12 @@ class ReservationServiceTest {
     @Test
     void updateStatus_SavesStatus_WhenRequestValid() {
         // given
-        when(reservationRepository.findById(reservation.getId())).thenReturn(reservation);
+        when(reservationRepository.findByIdForUpdate(reservation.getId())).thenReturn(reservation);
         ReservationStatusUpdateRequestDto statusUpdate = new ReservationStatusUpdateRequestDto();
         statusUpdate.setStatus(ReservationStatusEnum.CONFIRMED);
         Reservation confirmed = reservation.toBuilder().status(ReservationStatusEnum.CONFIRMED).build();
-        when(reservationRepository.update(any(Reservation.class))).thenReturn(confirmed);
+        when(reservationRepository.updateStatus(reservation.getId(), reservation.getStatus(),
+                ReservationStatusEnum.CONFIRMED)).thenReturn(confirmed);
 
         // when
         ReservationResponseDto response =
@@ -110,9 +113,8 @@ class ReservationServiceTest {
 
         // then
         assertThat(response.getStatus()).isEqualTo(ReservationStatusEnum.CONFIRMED);
-        ArgumentCaptor<Reservation> captor = ArgumentCaptor.forClass(Reservation.class);
-        verify(reservationRepository).update(captor.capture());
-        assertThat(captor.getValue().getStatus()).isEqualTo(ReservationStatusEnum.CONFIRMED);
+        verify(reservationRepository).updateStatus(reservation.getId(), reservation.getStatus(),
+                ReservationStatusEnum.CONFIRMED);
     }
 
     @Test

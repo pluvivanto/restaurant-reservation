@@ -28,6 +28,14 @@ public class RestaurantRepository {
                 parameterSource, new BeanPropertyRowMapper<>(Restaurant.class));
     }
 
+    public Restaurant findByIdForUpdate(Long id) {
+        SqlParameterSource parameterSource = new MapSqlParameterSource("id", id);
+        return namedParameterJdbcTemplate.queryForObject(
+                "SELECT * FROM restaurant WHERE id=:id FOR UPDATE",
+                parameterSource,
+                new BeanPropertyRowMapper<>(Restaurant.class));
+    }
+
     public Restaurant add(Restaurant restaurant) {
         Restaurant nonNullRestaurant =
                 Objects.requireNonNull(restaurant, "restaurant must not be null");

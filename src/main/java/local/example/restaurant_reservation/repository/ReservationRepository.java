@@ -6,6 +6,7 @@ import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Objects;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.namedparam.BeanPropertySqlParameterSource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -78,6 +79,39 @@ public class ReservationRepository {
             throw new IllegalArgumentException("Reservation %d not found".formatted(reservationId),
                     ex);
         }
+    }
+
+    public Reservation findByIdForUpdate(Long reservationId) {
+        try {
+            SqlParameterSource params = new MapSqlParameterSource("id", reservationId);
+            RowMapper<Reservation> mapper = new BeanPropertyRowMapper<>(Reservation.class);
+            return namedParameterJdbcTemplate.queryForObject("""
+                    SELECT *
+                    FROM reservation
+                    WHERE id = :id
+                    FOR UPDATE
+                    """, params, mapper);
+        } catch (EmptyResultDataAccessException ex) {
+            throw new IllegalArgumentException("Reservation %d not found".formatted(reservationId),
+                    ex);
+        }
+    }
+
+    public int sumReservedTablesForSlot(Long restaurantId, java.time.OffsetDateTime startsAt) {
+        MapSqlParameterSource params = new MapSqlParameterSource()
+                .addValue("restaurantId", restaurantId)
+                .addValue("startsAt", startsAt, Types.TIMESTAMP_WITH_TIMEZONE)
+                .addValue("cancelled", ReservationStatusEnum.CANCELLED.name(), Types.VARCHAR);
+
+        Integer count = namedParameterJdbcTemplate.queryForObject("""
+                SELECT COALESCE(SUM(table_count), 0)
+                FROM reservation
+                WHERE restaurant_id = :restaurantId
+                  AND starts_at = :startsAt
+                  AND status <> CAST(:cancelled AS reservation_status)
+                FOR UPDATE
+                """, params, Integer.class);
+        return count == null ? 0 : count;
     }
 
     public List<Reservation> findByRestaurantAndDate(Long restaurantId, LocalDate date) {

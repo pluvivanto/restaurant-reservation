@@ -17,6 +17,9 @@ CREATE TABLE IF NOT EXISTS customer (
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE UNIQUE INDEX IF NOT EXISTS idx_customer_email_lower
+  ON customer (LOWER(email));
+
 CREATE TYPE reservation_status AS ENUM (
 'PENDING',
 'CONFIRMED',
