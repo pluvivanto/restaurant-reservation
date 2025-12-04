@@ -7,8 +7,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
 
 import local.example.restaurant_reservation.dto.AvailabilityResponseDto;
+import local.example.restaurant_reservation.dto.AvailabilityResponseDto.SlotAvailability;
 import local.example.restaurant_reservation.service.AvailabilityService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,10 +33,13 @@ class AvailabilityControllerTest {
         // given
         Long restaurantId = 1L;
         LocalDate date = LocalDate.now().plusDays(2);
-        AvailabilityResponseDto dto = new AvailabilityResponseDto();
-        dto.setRestaurantId(restaurantId);
-        dto.setDate(date);
-        dto.setAvailableTables(5);
+        AvailabilityResponseDto dto = AvailabilityResponseDto.builder()
+                .restaurantId(restaurantId)
+                .date(date)
+                .slots(List.of(
+                        SlotAvailability.builder().startTime(LocalTime.of(10, 0)).availableTables(5).build(),
+                        SlotAvailability.builder().startTime(LocalTime.of(11, 0)).availableTables(3).build()))
+                .build();
         when(availabilityService.getAvailability(restaurantId, date)).thenReturn(dto);
 
         // when
@@ -42,7 +48,8 @@ class AvailabilityControllerTest {
                         date.toString()))
                 // then
                 .andExpect(status().isOk()).andExpect(jsonPath("$.restaurantId").value(restaurantId))
-                .andExpect(jsonPath("$.availableTables").value(5));
+                .andExpect(jsonPath("$.slots[0].startTime").value("10:00:00"))
+                .andExpect(jsonPath("$.slots[0].availableTables").value(5));
 
         verify(availabilityService).getAvailability(restaurantId, date);
     }
