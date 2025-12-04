@@ -12,7 +12,7 @@ import org.springframework.web.server.ResponseStatusException;
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
-    @ExceptionHandler({EmptyResultDataAccessException.class, IllegalArgumentException.class})
+    @ExceptionHandler({ EmptyResultDataAccessException.class, IllegalArgumentException.class })
     @ResponseStatus(HttpStatus.NOT_FOUND)
     public ApiError handleNotFound(Exception ex) {
         return new ApiError(ex.getMessage());
@@ -21,6 +21,12 @@ public class ApiExceptionHandler {
     @ExceptionHandler(DuplicateKeyException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ApiError handleConflict(DuplicateKeyException ex) {
+        return new ApiError(ex.getMessage());
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleIllegalState(IllegalStateException ex) {
         return new ApiError(ex.getMessage());
     }
 
