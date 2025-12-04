@@ -21,137 +21,167 @@ import local.example.restaurant_reservation.model.ReservationStatusEnum;
 @Repository
 public class ReservationRepository {
 
-    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+        private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-    public ReservationRepository(NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
-        this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
-    }
-
-    public Reservation add(Reservation reservation) {
-        MapSqlParameterSource params =
-                new MapSqlParameterSource().addValue("restaurantId", reservation.getRestaurantId())
-                        .addValue("customerId", reservation.getCustomerId())
-                        .addValue("tableCount", reservation.getTableCount())
-                        .addValue("startsAt", reservation.getStartsAt(),
-                                Types.TIMESTAMP_WITH_TIMEZONE)
-                        .addValue("status", reservation.getStatus().name(), Types.VARCHAR);
-
-        KeyHolder keyHolder = new GeneratedKeyHolder();
-        namedParameterJdbcTemplate.update(
-                """
-                        INSERT INTO reservation (restaurant_id, customer_id, table_count, starts_at, status)
-                        VALUES (:restaurantId, :customerId, :tableCount, :startsAt, CAST(:status AS reservation_status))
-                        """,
-                params, keyHolder, new String[] {"id"});
-        Number key = keyHolder.getKey();
-        if (key == null) {
-            throw new IllegalStateException("Failed to insert reservation, no key was generated");
+        public ReservationRepository(NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
+                this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
         }
-        return findById(key.longValue());
-    }
 
-    public Reservation update(Reservation reservation) {
-        Reservation nonNullReservation =
-                Objects.requireNonNull(reservation, "reservation must not be null");
-        BeanPropertySqlParameterSource params =
-                new BeanPropertySqlParameterSource(nonNullReservation);
-        namedParameterJdbcTemplate.update("""
-                UPDATE reservation
-                SET restaurant_id = :restaurantId,
-                  customer_id = :customerId,
-                  table_count = :tableCount,
-                  starts_at = :startsAt,
-                  status = CAST(:status AS reservation_status)
-                WHERE id = :id
-                """, params);
-        return findById(reservation.getId());
-    }
+        public Reservation add(Reservation reservation) {
+                MapSqlParameterSource params = new MapSqlParameterSource()
+                                .addValue("restaurantId", reservation.getRestaurantId())
+                                .addValue("customerId", reservation.getCustomerId())
+                                .addValue("tableCount", reservation.getTableCount())
+                                .addValue("startsAt", reservation.getStartsAt(),
+                                                Types.TIMESTAMP_WITH_TIMEZONE)
+                                .addValue("status", reservation.getStatus().name(), Types.VARCHAR);
 
-    public Reservation findById(Long reservationId) {
-        try {
-            SqlParameterSource params = new MapSqlParameterSource("id", reservationId);
-            return namedParameterJdbcTemplate.queryForObject("""
-                    SELECT *
-                    FROM reservation
-                    WHERE id = :id
-                    """, params, new BeanPropertyRowMapper<>(Reservation.class));
-        } catch (EmptyResultDataAccessException ex) {
-            throw new IllegalArgumentException("Reservation %d not found".formatted(reservationId),
-                    ex);
+                KeyHolder keyHolder = new GeneratedKeyHolder();
+                namedParameterJdbcTemplate.update(
+                                """
+                                                INSERT INTO reservation (restaurant_id, customer_id, table_count, starts_at, status)
+                                                VALUES (:restaurantId, :customerId, :tableCount, :startsAt, CAST(:status AS reservation_status))
+                                                """,
+                                params, keyHolder, new String[] { "id" });
+                Number key = keyHolder.getKey();
+                if (key == null) {
+                        throw new IllegalStateException("Failed to insert reservation, no key was generated");
+                }
+                return findById(key.longValue());
         }
-    }
 
-    public Reservation findByIdForUpdate(Long reservationId) {
-        try {
-            SqlParameterSource params = new MapSqlParameterSource("id", reservationId);
-            RowMapper<Reservation> mapper = new BeanPropertyRowMapper<>(Reservation.class);
-            return namedParameterJdbcTemplate.queryForObject("""
-                    SELECT *
-                    FROM reservation
-                    WHERE id = :id
-                    FOR UPDATE
-                    """, params, mapper);
-        } catch (EmptyResultDataAccessException ex) {
-            throw new IllegalArgumentException("Reservation %d not found".formatted(reservationId),
-                    ex);
+        public Reservation update(Reservation reservation) {
+                Reservation nonNullReservation = Objects.requireNonNull(reservation, "reservation must not be null");
+                BeanPropertySqlParameterSource params = new BeanPropertySqlParameterSource(nonNullReservation);
+                namedParameterJdbcTemplate.update("""
+                                UPDATE reservation
+                                SET restaurant_id = :restaurantId,
+                                  customer_id = :customerId,
+                                  table_count = :tableCount,
+                                  starts_at = :startsAt,
+                                  status = CAST(:status AS reservation_status)
+                                WHERE id = :id
+                                """, params);
+                return findById(reservation.getId());
         }
-    }
 
-    public int sumReservedTablesForSlot(Long restaurantId, java.time.OffsetDateTime startsAt) {
-        MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("restaurantId", restaurantId)
-                .addValue("startsAt", startsAt, Types.TIMESTAMP_WITH_TIMEZONE)
-                .addValue("cancelled", ReservationStatusEnum.CANCELLED.name(), Types.VARCHAR);
+        public Reservation findById(Long reservationId) {
+                try {
+                        SqlParameterSource params = new MapSqlParameterSource("id", reservationId);
+                        return namedParameterJdbcTemplate.queryForObject("""
+                                        SELECT *
+                                        FROM reservation
+                                        WHERE id = :id
+                                        """, params, new BeanPropertyRowMapper<>(Reservation.class));
+                } catch (EmptyResultDataAccessException ex) {
+                        throw new IllegalArgumentException("Reservation %d not found".formatted(reservationId),
+                                        ex);
+                }
+        }
 
-        Integer count = namedParameterJdbcTemplate.queryForObject("""
-                SELECT COALESCE(SUM(table_count), 0)
-                FROM reservation
-                WHERE restaurant_id = :restaurantId
-                  AND starts_at = :startsAt
-                  AND status <> CAST(:cancelled AS reservation_status)
-                FOR UPDATE
-                """, params, Integer.class);
-        return count == null ? 0 : count;
-    }
+        public Reservation findByIdForUpdate(Long reservationId) {
+                try {
+                        SqlParameterSource params = new MapSqlParameterSource("id", reservationId);
+                        RowMapper<Reservation> mapper = new BeanPropertyRowMapper<>(Reservation.class);
+                        return namedParameterJdbcTemplate.queryForObject("""
+                                        SELECT *
+                                        FROM reservation
+                                        WHERE id = :id
+                                        FOR UPDATE
+                                        """, params, mapper);
+                } catch (EmptyResultDataAccessException ex) {
+                        throw new IllegalArgumentException("Reservation %d not found".formatted(reservationId),
+                                        ex);
+                }
+        }
 
-    public List<Reservation> findByRestaurantAndDate(Long restaurantId, LocalDate date) {
-      // Compare using UTC day boundaries to avoid timezone-sensitive casts
-      var startOfDayUtc = date.atStartOfDay().atOffset(ZoneOffset.UTC);
-      var endOfDayUtc = startOfDayUtc.plusDays(1);
-      MapSqlParameterSource params =
-          new MapSqlParameterSource().addValue("restaurantId", restaurantId)
-              .addValue("startAt", startOfDayUtc, Types.TIMESTAMP_WITH_TIMEZONE)
-              .addValue("endAt", endOfDayUtc, Types.TIMESTAMP_WITH_TIMEZONE);
-      return namedParameterJdbcTemplate.query("""
-          SELECT *
-          FROM reservation
-          WHERE restaurant_id = :restaurantId
-            AND starts_at >= :startAt
-            AND starts_at < :endAt
-          ORDER BY starts_at, id
-          """, params, new BeanPropertyRowMapper<>(Reservation.class));
-    }
+        public int sumReservedTablesForSlot(Long restaurantId, java.time.OffsetDateTime startsAt) {
+                MapSqlParameterSource params = new MapSqlParameterSource()
+                                .addValue("restaurantId", restaurantId)
+                                .addValue("startsAt", startsAt, Types.TIMESTAMP_WITH_TIMEZONE)
+                                .addValue("cancelled", ReservationStatusEnum.CANCELLED.name(), Types.VARCHAR);
 
-    public List<Reservation> findByRestaurant(Long restaurantId) {
-        MapSqlParameterSource params = new MapSqlParameterSource("restaurantId", restaurantId);
-        return namedParameterJdbcTemplate.query("""
-                SELECT *
-                FROM reservation
-                WHERE restaurant_id = :restaurantId
-                ORDER BY starts_at, id
-                """, params, new BeanPropertyRowMapper<>(Reservation.class));
-    }
+                Integer count = namedParameterJdbcTemplate.queryForObject("""
+                                SELECT COALESCE(SUM(table_count), 0)
+                                FROM reservation
+                                WHERE restaurant_id = :restaurantId
+                                  AND starts_at = :startsAt
+                                  AND status <> CAST(:cancelled AS reservation_status)
+                                FOR UPDATE
+                                """, params, Integer.class);
+                return count == null ? 0 : count;
+        }
 
-    public List<Reservation> findByStatusNot(Long restaurantId, ReservationStatusEnum status) {
-        MapSqlParameterSource params = new MapSqlParameterSource()
-                .addValue("restaurantId", restaurantId).addValue("status", status.name());
-        return namedParameterJdbcTemplate.query("""
-                SELECT *
-                FROM reservation
-                WHERE restaurant_id = :restaurantId
-                  AND status <> CAST(:status AS reservation_status)
-                ORDER BY starts_at, id
-                """, params, new BeanPropertyRowMapper<>(Reservation.class));
-    }
+        public List<Reservation> findByRestaurantAndDate(Long restaurantId, LocalDate date, int page, int size) {
+                // Compare using UTC day boundaries to avoid timezone-sensitive casts
+                var startOfDayUtc = date.atStartOfDay().atOffset(ZoneOffset.UTC);
+                var endOfDayUtc = startOfDayUtc.plusDays(1);
+                MapSqlParameterSource params = new MapSqlParameterSource().addValue("restaurantId", restaurantId)
+                                .addValue("startAt", startOfDayUtc, Types.TIMESTAMP_WITH_TIMEZONE)
+                                .addValue("endAt", endOfDayUtc, Types.TIMESTAMP_WITH_TIMEZONE)
+                                .addValue("limit", size)
+                                .addValue("offset", page * size);
+                return namedParameterJdbcTemplate.query("""
+                                SELECT *
+                                FROM reservation
+                                WHERE restaurant_id = :restaurantId
+                                  AND starts_at >= :startAt
+                                  AND starts_at < :endAt
+                                ORDER BY starts_at, id
+                                LIMIT :limit OFFSET :offset
+                                """, params, new BeanPropertyRowMapper<>(Reservation.class));
+        }
+
+        public List<Reservation> findByRestaurantAndDate(Long restaurantId, LocalDate date) {
+                // Compare using UTC day boundaries to avoid timezone-sensitive casts
+                var startOfDayUtc = date.atStartOfDay().atOffset(ZoneOffset.UTC);
+                var endOfDayUtc = startOfDayUtc.plusDays(1);
+                MapSqlParameterSource params = new MapSqlParameterSource().addValue("restaurantId", restaurantId)
+                                .addValue("startAt", startOfDayUtc, Types.TIMESTAMP_WITH_TIMEZONE)
+                                .addValue("endAt", endOfDayUtc, Types.TIMESTAMP_WITH_TIMEZONE);
+                return namedParameterJdbcTemplate.query("""
+                                SELECT *
+                                FROM reservation
+                                WHERE restaurant_id = :restaurantId
+                                  AND starts_at >= :startAt
+                                  AND starts_at < :endAt
+                                ORDER BY starts_at, id
+                                """, params, new BeanPropertyRowMapper<>(Reservation.class));
+        }
+
+        public List<Reservation> findByRestaurant(Long restaurantId, int page, int size) {
+                MapSqlParameterSource params = new MapSqlParameterSource("restaurantId", restaurantId)
+                                .addValue("limit", size)
+                                .addValue("offset", page * size);
+                return namedParameterJdbcTemplate.query("""
+                                SELECT *
+                                FROM reservation
+                                WHERE restaurant_id = :restaurantId
+                                ORDER BY starts_at, id
+                                LIMIT :limit OFFSET :offset
+                                """, params, new BeanPropertyRowMapper<>(Reservation.class));
+        }
+
+        public List<Reservation> findByRestaurant(Long restaurantId) {
+                MapSqlParameterSource params = new MapSqlParameterSource("restaurantId", restaurantId);
+                return namedParameterJdbcTemplate.query("""
+                                SELECT *
+                                FROM reservation
+                                WHERE restaurant_id = :restaurantId
+                                ORDER BY starts_at, id
+                                """, params, new BeanPropertyRowMapper<>(Reservation.class));
+        }
+
+        public List<Reservation> findByStatusNot(Long restaurantId, ReservationStatusEnum status) {
+                MapSqlParameterSource params = new MapSqlParameterSource()
+                                .addValue("restaurantId", restaurantId).addValue("status", status.name());
+                return namedParameterJdbcTemplate.query("""
+                                SELECT *
+                                FROM reservation
+                                WHERE restaurant_id = :restaurantId
+                                  AND status <> CAST(:status AS reservation_status)
+                                ORDER BY starts_at, id
+                                """, params, new BeanPropertyRowMapper<>(Reservation.class));
+        }
 
 }

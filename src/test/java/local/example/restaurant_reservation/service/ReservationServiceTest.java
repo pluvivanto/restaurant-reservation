@@ -34,118 +34,117 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class ReservationServiceTest {
 
-    private static final Faker FAKER = new Faker(new Random(3));
+        private static final Faker FAKER = new Faker(new Random(3));
 
-    @Mock
-    private ReservationRepository reservationRepository;
+        @Mock
+        private ReservationRepository reservationRepository;
 
-    @Mock
-    private CustomerRepository customerRepository;
+        @Mock
+        private CustomerRepository customerRepository;
 
-    @Mock
-    private RestaurantRepository restaurantRepository;
+        @Mock
+        private RestaurantRepository restaurantRepository;
 
-    @InjectMocks
-    private ReservationService reservationService;
+        @InjectMocks
+        private ReservationService reservationService;
 
-    private Restaurant restaurant;
-    private Reservation reservation;
-    private Customer customer;
+        private Restaurant restaurant;
+        private Reservation reservation;
+        private Customer customer;
 
-    @BeforeEach
-    void setUp() {
-        restaurant = Restaurant.builder().id(1L).name(FAKER.company().name()).totalTables(10).build();
+        @BeforeEach
+        void setUp() {
+                restaurant = Restaurant.builder().id(1L).name(FAKER.company().name()).totalTables(10).build();
 
-        customer = Customer.builder().id(2L).name(FAKER.name().fullName())
-                .email(FAKER.internet().emailAddress()).phone(FAKER.phoneNumber().cellPhone()).build();
+                customer = Customer.builder().id(2L).name(FAKER.name().fullName())
+                                .email(FAKER.internet().emailAddress()).phone(FAKER.phoneNumber().cellPhone()).build();
 
-        reservation = Reservation.builder().id(3L).restaurantId(restaurant.getId())
-                .customerId(customer.getId()).tableCount(2)
-                .startsAt(OffsetDateTime.now(ZoneOffset.UTC).plusDays(2)
-                        .truncatedTo(ChronoUnit.SECONDS))
-                .status(ReservationStatusEnum.PENDING)
-                .createdAt(OffsetDateTime.now(ZoneOffset.UTC).minusDays(1)).build();
-    }
+                reservation = Reservation.builder().id(3L).restaurantId(restaurant.getId())
+                                .customerId(customer.getId()).tableCount(2)
+                                .startsAt(OffsetDateTime.now(ZoneOffset.UTC).plusDays(2)
+                                                .truncatedTo(ChronoUnit.SECONDS))
+                                .status(ReservationStatusEnum.PENDING)
+                                .createdAt(OffsetDateTime.now(ZoneOffset.UTC).minusDays(1)).build();
+        }
 
-    @Test
-    void createReservation_CreatesCustomerAndReservation_WhenValid() {
-        // given
-        ReservationRequestDto requestDto = new ReservationRequestDto();
-        requestDto.setRestaurantId(restaurant.getId());
-        requestDto.setCustomerName(FAKER.name().fullName());
-        requestDto.setCustomerPhone(FAKER.phoneNumber().cellPhone());
-        requestDto.setCustomerEmail(FAKER.internet().emailAddress());
-        requestDto.setTableCount(2);
-        requestDto.setStartsAt(reservation.getStartsAt());
+        @Test
+        void createReservation_CreatesCustomerAndReservation_WhenValid() {
+                // given
+                ReservationRequestDto requestDto = new ReservationRequestDto();
+                requestDto.setRestaurantId(restaurant.getId());
+                requestDto.setCustomerName(FAKER.name().fullName());
+                requestDto.setCustomerPhone(FAKER.phoneNumber().cellPhone());
+                requestDto.setCustomerEmail(FAKER.internet().emailAddress());
+                requestDto.setTableCount(2);
+                requestDto.setStartsAt(reservation.getStartsAt());
 
-        when(restaurantRepository.findByIdForUpdate(restaurant.getId())).thenReturn(restaurant);
-        when(customerRepository.findByEmail(requestDto.getCustomerEmail()))
-                .thenThrow(new IllegalArgumentException("missing"));
-        when(customerRepository.add(any(Customer.class))).thenReturn(customer);
-        when(reservationRepository.sumReservedTablesForSlot(restaurant.getId(), reservation.getStartsAt()))
-                .thenReturn(0);
-        when(reservationRepository.add(any(Reservation.class))).thenReturn(reservation);
+                when(restaurantRepository.findByIdForUpdate(restaurant.getId())).thenReturn(restaurant);
+                when(customerRepository.findByEmail(requestDto.getCustomerEmail()))
+                                .thenThrow(new IllegalArgumentException("missing"));
+                when(customerRepository.add(any(Customer.class))).thenReturn(customer);
+                when(reservationRepository.sumReservedTablesForSlot(restaurant.getId(), reservation.getStartsAt()))
+                                .thenReturn(0);
+                when(reservationRepository.add(any(Reservation.class))).thenReturn(reservation);
 
-        // when
-        ReservationResponseDto response = reservationService.createReservation(requestDto);
+                // when
+                ReservationResponseDto response = reservationService.createReservation(requestDto);
 
-        // then
-        assertThat(response.getId()).isEqualTo(reservation.getId());
-        assertThat(response.getCustomerId()).isEqualTo(customer.getId());
-        assertThat(response.getRestaurantId()).isEqualTo(restaurant.getId());
-        verify(customerRepository).add(any(Customer.class));
-        verify(reservationRepository).add(any(Reservation.class));
-    }
+                // then
+                assertThat(response.getId()).isEqualTo(reservation.getId());
+                assertThat(response.getCustomerId()).isEqualTo(customer.getId());
+                assertThat(response.getRestaurantId()).isEqualTo(restaurant.getId());
+                verify(customerRepository).add(any(Customer.class));
+                verify(reservationRepository).add(any(Reservation.class));
+        }
 
-    @Test
-    void updateStatus_SavesStatus_WhenRequestValid() {
-        // given
-        when(reservationRepository.findByIdForUpdate(reservation.getId())).thenReturn(reservation);
-        ReservationStatusUpdateRequestDto statusUpdate = new ReservationStatusUpdateRequestDto();
-        statusUpdate.setStatus(ReservationStatusEnum.CONFIRMED);
-        Reservation confirmed = reservation.toBuilder().status(ReservationStatusEnum.CONFIRMED).build();
-        when(reservationRepository.updateStatus(reservation.getId(), reservation.getStatus(),
-                ReservationStatusEnum.CONFIRMED)).thenReturn(confirmed);
+        @Test
+        void updateStatus_SavesStatus_WhenRequestValid() {
+                // given
+                when(reservationRepository.findByIdForUpdate(reservation.getId())).thenReturn(reservation);
+                ReservationStatusUpdateRequestDto statusUpdate = new ReservationStatusUpdateRequestDto();
+                statusUpdate.setStatus(ReservationStatusEnum.CONFIRMED);
+                Reservation confirmed = reservation.toBuilder().status(ReservationStatusEnum.CONFIRMED).build();
+                when(reservationRepository.update(any(Reservation.class))).thenReturn(confirmed);
 
-        // when
-        ReservationResponseDto response =
-                reservationService.updateStatus(reservation.getId(), statusUpdate);
+                // when
+                ReservationResponseDto response = reservationService.updateStatus(reservation.getId(), statusUpdate);
 
-        // then
-        assertThat(response.getStatus()).isEqualTo(ReservationStatusEnum.CONFIRMED);
-        verify(reservationRepository).updateStatus(reservation.getId(), reservation.getStatus(),
-                ReservationStatusEnum.CONFIRMED);
-    }
+                // then
+                assertThat(response.getStatus()).isEqualTo(ReservationStatusEnum.CONFIRMED);
+                ArgumentCaptor<Reservation> captor = ArgumentCaptor.forClass(Reservation.class);
+                verify(reservationRepository).update(captor.capture());
+                assertThat(captor.getValue().getStatus()).isEqualTo(ReservationStatusEnum.CONFIRMED);
+        }
 
-    @Test
-    void listReservations_FiltersByDate_WhenProvided() {
-        // given
-        LocalDate date = reservation.getStartsAt().toLocalDate();
-        when(reservationRepository.findByRestaurantAndDate(restaurant.getId(), date))
-                .thenReturn(List.of(reservation));
+        @Test
+        void listReservations_FiltersByDate_WhenProvided() {
+                // given
+                LocalDate date = reservation.getStartsAt().toLocalDate();
+                when(reservationRepository.findByRestaurantAndDate(restaurant.getId(), date, 0, 20))
+                                .thenReturn(List.of(reservation));
 
-        // when
-        List<ReservationResponseDto> result =
-                reservationService.listReservations(restaurant.getId(), date);
+                // when
+                List<ReservationResponseDto> result = reservationService.listReservations(restaurant.getId(), date, 0,
+                                20);
 
-        // then
-        assertThat(result).hasSize(1);
-        assertThat(result.getFirst().getId()).isEqualTo(reservation.getId());
-        verify(reservationRepository).findByRestaurantAndDate(restaurant.getId(), date);
-    }
+                // then
+                assertThat(result).hasSize(1);
+                assertThat(result.getFirst().getId()).isEqualTo(reservation.getId());
+                verify(reservationRepository).findByRestaurantAndDate(restaurant.getId(), date, 0, 20);
+        }
 
-    @Test
-    void listReservations_ReturnsAll_WhenDateMissing() {
-        // given
-        when(reservationRepository.findByRestaurant(restaurant.getId()))
-                .thenReturn(List.of(reservation));
+        @Test
+        void listReservations_ReturnsAll_WhenDateMissing() {
+                // given
+                when(reservationRepository.findByRestaurant(restaurant.getId(), 0, 20))
+                                .thenReturn(List.of(reservation));
 
-        // when
-        List<ReservationResponseDto> result =
-                reservationService.listReservations(restaurant.getId(), null);
+                // when
+                List<ReservationResponseDto> result = reservationService.listReservations(restaurant.getId(), null, 0,
+                                20);
 
-        // then
-        assertThat(result).hasSize(1);
-        verify(reservationRepository).findByRestaurant(restaurant.getId());
-    }
+                // then
+                assertThat(result).hasSize(1);
+                verify(reservationRepository).findByRestaurant(restaurant.getId(), 0, 20);
+        }
 }

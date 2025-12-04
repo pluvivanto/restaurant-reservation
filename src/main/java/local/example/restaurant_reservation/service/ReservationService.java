@@ -38,9 +38,8 @@ public class ReservationService {
             customer = customerRepository.add(requestDto.toCustomer());
         }
 
-        int reservedTables =
-                reservationRepository.sumReservedTablesForSlot(restaurant.getId(),
-                        requestDto.getStartsAt());
+        int reservedTables = reservationRepository.sumReservedTablesForSlot(restaurant.getId(),
+                requestDto.getStartsAt());
         if (reservedTables + requestDto.getTableCount() > restaurant.getTotalTables()) {
             throw new IllegalStateException("Not enough tables available for the requested slot");
         }
@@ -57,7 +56,7 @@ public class ReservationService {
 
     @Transactional
     public ReservationResponseDto updateStatus(Long reservationId,
-                                               ReservationStatusUpdateRequestDto statusRequest) {
+            ReservationStatusUpdateRequestDto statusRequest) {
         Reservation reservation = reservationRepository.findByIdForUpdate(reservationId);
         Reservation updated = reservation.toBuilder()
                 .status(statusRequest.getStatus())
@@ -66,10 +65,10 @@ public class ReservationService {
         return ReservationResponseDto.fromEntity(updated);
     }
 
-    public List<ReservationResponseDto> listReservations(Long restaurantId, LocalDate date) {
+    public List<ReservationResponseDto> listReservations(Long restaurantId, LocalDate date, int page, int size) {
         List<Reservation> reservations = date == null
-                ? reservationRepository.findByRestaurant(restaurantId)
-                : reservationRepository.findByRestaurantAndDate(restaurantId, date);
+                ? reservationRepository.findByRestaurant(restaurantId, page, size)
+                : reservationRepository.findByRestaurantAndDate(restaurantId, date, page, size);
         return reservations.stream().map(ReservationResponseDto::fromEntity).toList();
     }
 }
